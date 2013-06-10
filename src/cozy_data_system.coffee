@@ -65,6 +65,10 @@ class exports.CozyDataSystem
             @_adapter().mergeAccount @, data, callback
         descr.model::destroyAccount = (callback) ->
             @_adapter().destroyAccount @, callback
+        descr.model::createUser = (data, callback) ->
+            @_adapter().createUser @, data, callback
+        descr.model::updateUser = (data, callback) ->
+            @_adapter().updateUser @, data, callback
 
 
     # Check existence of model in the data system.
@@ -347,6 +351,40 @@ class exports.CozyDataSystem
     whatTypeName: (model, propName) ->
         ds = @schema.definitions[model]
         return ds.properties[propName] && ds.properties[propName].type.name
+                                
+
+    # Create a new document from given data. If no ID is set a new one
+    # is automatically generated.
+    createUser: (model, data, callback) ->
+        path = "user/"
+        if data.id?
+            path += "#{data.id}/"
+            delete data.id
+        data.docType = model
+
+        @client.post path, data, (error, response, body) =>
+            if error
+                callback error
+            else if response.statusCode is 409
+                callback new Error("This document already exists")
+            else if response.statusCode isnt 201
+                callback new Error("Server error occured.")
+            else
+                callback null, body._id
+
+
+
+    # Save only given attributes to DB.
+    updateUser: (model, data, callback) ->
+        @client.put "user/merge/#{model.id}/", data, (error, response, body) =>
+            if error
+                callback error
+            else if response.statusCode is 404
+                callback new Error("Document not found")
+            else if response.statusCode isnt 200
+                callback new Error("Server error occured.")
+            else
+                callback()
 
 
     # Find an account with its ID. Returns it if it is found else it
