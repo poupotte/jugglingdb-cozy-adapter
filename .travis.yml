@@ -3,11 +3,11 @@ node_js:
     - "0.8"
 services:
     - couchdb
-    - postfix
 env:
     global:
         - NODE_ENV=test
 before_install:
+    - sudo apt-get install postfix
     - git clone git://github.com/mycozycloud/cozy-data-system.git
     - cd cozy-data-system 
     - npm install
